@@ -7,7 +7,7 @@
 
 package edu.wpi.first.wpilibj.templates;
 
-
+//test to see if git works
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.CANJaguar;
@@ -64,7 +64,7 @@ public class RobotTemplate extends IterativeRobot
             enc2.start();
             
             highGear = false; //determines which gear the transmission is currently in
-            try 
+            try
             {
                 cjag1=new CANJaguar(2);
                 cjag2=new CANJaguar(3);
