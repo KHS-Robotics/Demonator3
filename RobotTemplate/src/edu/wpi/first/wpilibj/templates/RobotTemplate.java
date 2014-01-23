@@ -39,6 +39,7 @@ public class RobotTemplate extends IterativeRobot
     public static final int kReverse_val = 2;
     private boolean highGear;
     private boolean enableCompressor;
+    private final double encMultiplier = .0014; //each encoder pulse translates to .0014 ft
         
     CANJaguar cjag1;
     CANJaguar cjag2;
@@ -106,8 +107,12 @@ public class RobotTemplate extends IterativeRobot
      */
     public void teleopPeriodic () 
     {
-        double e1rate = enc1.getRate();
-        double e2rate = enc2.getRate();
+        double e1rate = enc1.getRate(); //gets rate for first encoder  
+        double e2rate = enc2.getRate(); //gets rate of second encoder
+        
+        driveStation.println(Line.kUser2, 1, "" + e1rate); //outputs rate of encoder 1 in ft/sec
+        driveStation.println(Line.kUser3, 1, "" + e2rate); //outputs rate of encoder 2 in ft/sec
+        
         if (j1.getRawButton(3) == true) 
         {
             s1.set(DoubleSolenoid.Value.kForward);
