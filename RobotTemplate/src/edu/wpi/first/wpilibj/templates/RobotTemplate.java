@@ -25,6 +25,8 @@ import edu.wpi.first.wpilibj.Relay;
 //import edu.wpi.first.wpilibj.DigitalOutput;
 //import edu.wpi.first.wpilibj.DigitalModule;
 
+//comment
+
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -112,7 +114,7 @@ public class RobotTemplate extends IterativeRobot
      */
     public void teleopPeriodic () 
     {
-        double e1rate = enc1.getRate(); //gets rate for first encoder
+        double e1rate = enc1.getRate(); //gets rate for first encoder  
         double e2rate = enc2.getRate(); //gets rate of second encoder
         
         driveStation.println(Line.kUser2, 1, "" + e1rate); //outputs rate of encoder 1 in ft/sec
