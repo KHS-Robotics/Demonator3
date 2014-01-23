@@ -37,7 +37,8 @@ public class RobotTemplate extends IterativeRobot
 {
     public static final int kForward_val = 1;
     public static final int kReverse_val = 2;
-    boolean highGear;
+    private boolean highGear;
+    private boolean enableCompressor;
         
     CANJaguar cjag1;
     CANJaguar cjag2;
@@ -63,16 +64,17 @@ public class RobotTemplate extends IterativeRobot
             enc1.start();
             enc2.start();
             
+            compressor.set(Relay.Value.kOff);
+            
             highGear = false; //determines which gear the transmission is currently in
             try
             {
-                cjag1=new CANJaguar(2);
-                cjag2=new CANJaguar(3);
+                cjag1 = new CANJaguar(2);
+                cjag2 = new CANJaguar(3);
                 //cjag3=new CANJaguar(4);
                 //cjag4=new CANJaguar(5);
                 //cjag5=new CANJaguar(6);
                 //cjag6=new CANJaguar(7);
-                compressor.set(Relay.Value.kOff);
             }
             catch (CANTimeoutException e)
             {
@@ -82,21 +84,15 @@ public class RobotTemplate extends IterativeRobot
     }
     
     /**
-     * Enables the compressor if the user asks only if air is needed
+     * This function is run when the robot is first started up in
+     * autonomous and should be used for any initialization code. 
      */
-    public void compressorEnable ()
+    public void autonomousInit ()
     {
-        if (j2.getRawButton(4) == true && false == pSwitch.get())
-        {
-            compressor.set(Relay.Value.kForward);
-            driveStation.println(Line.kUser2,2,"Compressor on");
-        }
-        else
-        {
-            compressor.set(Relay.Value.kOff);
-            driveStation.println(Line.kUser2,2,"Compressor off");
-        }
+        enableCompressor = false;
+        compressor.set(Relay.Value.kOn);
     }
+    
     /**
      * This function is called periodically during autonomous
      */
@@ -126,7 +122,7 @@ public class RobotTemplate extends IterativeRobot
         
         driveStation.updateLCD();
 
-        compressorEnable();
+        compressorControl();
         
         double x = j1.getX();
         double y = j1.getY();
@@ -150,13 +146,13 @@ public class RobotTemplate extends IterativeRobot
         }
         try 
         {
-            cjag1.setX(left,(byte)1);
-            cjag2.setX(right,(byte)1);
-            //cjag3.setX(left,(byte)1);
-            //cjag4.setX(right,(byte)1);
-            //cjag5.setX(right,(byte)1);
-            //cjag6.setX(right,(byte)1);
-            CANJaguar.updateSyncGroup((byte)1);
+            cjag1.setX(left,(byte) 1);
+            cjag2.setX(right,(byte) 1);
+            //cjag3.setX(left,(byte) 1);
+            //cjag4.setX(right,(byte) 1);
+            //cjag5.setX(right,(byte) 1);
+            //cjag6.setX(right,(byte) 1);
+            CANJaguar.updateSyncGroup((byte) 1);
             double a = cjag1.getSpeed();
             double b = cjag2.getSpeed();
             driveStation.println(Line.kUser3,3,"" + b + "" + a);
@@ -172,6 +168,25 @@ public class RobotTemplate extends IterativeRobot
     public void testPeriodic () 
     {
     
+    }
+    
+    /**
+     * Enables the compressor if the user asks only if air is needed
+     */
+    public void compressorControl ()
+    {
+        if (j2.getRawButton(4) == true && false == pSwitch.get())
+        {
+            compressor.set(Relay.Value.kForward);
+            enableCompressor = true;
+            driveStation.println(Line.kUser2,2,"Compressor on");
+        }
+        else
+        {
+            compressor.set(Relay.Value.kOff);
+            enableCompressor = false;
+            driveStation.println(Line.kUser2,2,"Compressor off");
+        }
     }
     
     public void disabledInit ()
