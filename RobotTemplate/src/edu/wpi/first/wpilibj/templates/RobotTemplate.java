@@ -21,7 +21,6 @@ import edu.wpi.first.wpilibj.can.CANTimeoutException;
 import edu.wpi.first.wpilibj.DriverStationLCD.Line;
 import edu.wpi.first.wpilibj.DriverStationLCD;
 import edu.wpi.first.wpilibj.Relay;
-//import edu.wpi.first.wpilibj.DigitalInput;
 //import edu.wpi.first.wpilibj.DigitalOutput;
 //import edu.wpi.first.wpilibj.DigitalModule;
 
@@ -39,17 +38,19 @@ public class RobotTemplate extends IterativeRobot
     public static final int kReverse_val = 2;
     private boolean highGear;
     private boolean enableCompressor;
-        
+    
     CANJaguar cjag1;
     CANJaguar cjag2;
     //CANJaguar cjag3;
     //CANJaguar cjag4;
     //CANJaguar cjag5;
     //CANJaguar cjag6;
+    CANJaguar cJagArm;
     DoubleSolenoid s1 = new DoubleSolenoid(kForward_val, kReverse_val);
     DriverStationLCD driveStation = DriverStationLCD.getInstance();
     Relay compressor = new Relay(1, Relay.Direction.kForward);
     DigitalInput pSwitch = new DigitalInput(14);
+    DigitalInput limitSwitch = new DigitalInput(9);
     Joystick j1 = new Joystick(1);
     Joystick j2 = new Joystick(2);
     Encoder enc1 = new Encoder(1,2);
@@ -75,6 +76,7 @@ public class RobotTemplate extends IterativeRobot
                 //cjag4=new CANJaguar(5);
                 //cjag5=new CANJaguar(6);
                 //cjag6=new CANJaguar(7);
+                cJagArm = new CANJaguar(8);
             }
             catch (CANTimeoutException e)
             {
@@ -108,6 +110,9 @@ public class RobotTemplate extends IterativeRobot
     {
         double e1rate = enc1.getRate();
         double e2rate = enc2.getRate();
+        
+        enableCompressor = pSwitch.get();
+        
         if (j1.getRawButton(3) == true) 
         {
             s1.set(DoubleSolenoid.Value.kForward);
@@ -123,6 +128,7 @@ public class RobotTemplate extends IterativeRobot
         driveStation.updateLCD();
 
         compressorControl();
+        armTeleop();
         
         double x = j1.getX();
         double y = j1.getY();
@@ -155,7 +161,7 @@ public class RobotTemplate extends IterativeRobot
             CANJaguar.updateSyncGroup((byte) 1);
             double a = cjag1.getSpeed();
             double b = cjag2.getSpeed();
-            driveStation.println(Line.kUser3,3,"" + b + "" + a);
+            driveStation.println(Line.kUser3, 3, "" + b + "" + a);
         }
         catch (CANTimeoutException e)
         {    
@@ -167,7 +173,7 @@ public class RobotTemplate extends IterativeRobot
      */
     public void testPeriodic () 
     {
-    
+        
     }
     
     /**
@@ -186,6 +192,25 @@ public class RobotTemplate extends IterativeRobot
             compressor.set(Relay.Value.kOff);
             enableCompressor = false;
             driveStation.println(Line.kUser2,2,"Compressor off");
+        }
+    }
+    
+    /**
+     * Controls the arm in teleop
+     */
+    public void armTeleop ()
+    {
+        double axisY = j2.getAxis(Joystick.AxisType.kY);
+        if (limitSwitch.get() == true && axisY > 0)
+        {
+            axisY = 0;
+            try
+            {
+                cJagArm.setX(axisY);
+            }
+            catch (CANTimeoutException e)
+            {
+            }
         }
     }
     
