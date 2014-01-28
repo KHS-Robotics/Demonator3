@@ -5,13 +5,16 @@
 /* the project.                                                               */
 /*----------------------------------------------------------------------------*/
 
+/*-----------------------------------------------------------------*/
+/* Kennett High School Demon Robotics souce code for FRC 2014 Game */
+/*-----------------------------------------------------------------*/
+
 package edu.wpi.first.wpilibj.templates;
 
 
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.CANJaguar;
-import edu.wpi.first.wpilibj.DigitalInput;
 //import edu.wpi.first.wpilibj.Jaguar;
 //import edu.wpi.first.wpilibj.RobotDrive.MotorType;
 import edu.wpi.first.wpilibj.Joystick;
@@ -21,7 +24,7 @@ import edu.wpi.first.wpilibj.can.CANTimeoutException;
 import edu.wpi.first.wpilibj.DriverStationLCD.Line;
 import edu.wpi.first.wpilibj.DriverStationLCD;
 import edu.wpi.first.wpilibj.Relay;
-//import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DigitalInput;
 //import edu.wpi.first.wpilibj.DigitalOutput;
 //import edu.wpi.first.wpilibj.DigitalModule;
 
@@ -39,23 +42,33 @@ public class RobotTemplate extends IterativeRobot
 {
     public static final int kForward_val = 1;
     public static final int kReverse_val = 2;
-    boolean highGear;
-    private final double encMultiplier = .0014; //each encoder pulse translates to .0014 ft
-        
-    CANJaguar cjag1;
-    CANJaguar cjag2;
-    //CANJaguar cjag3;
-    //CANJaguar cjag4;
-    //CANJaguar cjag5;
-    //CANJaguar cjag6;
+    public static final double encMultiplier = .0014; //each encoder pulse translates to .0014 ft
+    private int numLoops=0;
+    private boolean driveGear;
+    private boolean compressorStatus;
+    
+    CANJaguar driveLeft1;
+    CANJaguar driveLeft2;
+    CANJaguar armJag;
+    CANJaguar driveLeft3;
+    CANJaguar driveRight1;
+    CANJaguar driveRight2;
+    CANJaguar driveRight3;
+    
     DoubleSolenoid s1 = new DoubleSolenoid(kForward_val, kReverse_val);
-    DriverStationLCD driveStation = DriverStationLCD.getInstance();
+    
+    DriverStationLCD driverStation = DriverStationLCD.getInstance();
+    
     Relay compressor = new Relay(1, Relay.Direction.kForward);
+    
     DigitalInput pSwitch = new DigitalInput(14);
+    DigitalInput limitSwitch = new DigitalInput(9);
+    
     Joystick j1 = new Joystick(1);
     Joystick j2 = new Joystick(2);
-    Encoder enc1 = new Encoder(1,2);
-    Encoder enc2 = new Encoder(3,4);
+    
+    Encoder encLeft = new Encoder(1,2);
+    Encoder encRight = new Encoder(3,4);
    
 
     /**
@@ -64,25 +77,27 @@ public class RobotTemplate extends IterativeRobot
      */
     public void robotInit () 
     {
-            enc1.start();
-            enc2.start();
+            encLeft.start();
+            encRight.start();
             
-            highGear = false; //determines which gear the transmission is currently in
+            compressorStatus = true; //pSwitch.get();
+            
+            driveGear = false; //determines which gear the transmission is currently in False=low
             try 
             {
-                cjag1=new CANJaguar(2);
-                cjag2=new CANJaguar(3);
-                //cjag3=new CANJaguar(4);
-                //cjag4=new CANJaguar(5);
-                //cjag5=new CANJaguar(6);
-                //cjag6=new CANJaguar(7);
+                driveLeft1=new CANJaguar(2);
+                driveLeft2=new CANJaguar(3);
+ //               armJag = new CANJaguar(8);
+                driveLeft3=new CANJaguar(4);
+                driveRight1=new CANJaguar(5);
+                driveRight2=new CANJaguar(6);
+                driveRight3=new CANJaguar(7);
                 compressor.set(Relay.Value.kOff);
             }
             catch (CANTimeoutException e)
             {
             }
             s1.set(DoubleSolenoid.Value.kReverse);
-            //DigitalInput input=new DigitalInput(1);
     }
     
     /**
@@ -90,52 +105,69 @@ public class RobotTemplate extends IterativeRobot
      */
     public void compressorEnable ()
     {
-        if (j2.getRawButton(4) == true && false == pSwitch.get())
+        if (compressorStatus == true && false == pSwitch.get())
         {
             compressor.set(Relay.Value.kForward);
-            driveStation.println(Line.kUser2,2,"Compressor on");
         }
         else
         {
             compressor.set(Relay.Value.kOff);
-            driveStation.println(Line.kUser2,2,"Compressor off");
         }
     }
     /**
      * This function is called periodically during autonomous
      */
+    public void updateDS()
+    {
+        if (driveGear)
+        {
+            driverStation.println(Line.kUser1,1,"HIGH GEAR!");
+        }
+        else
+        {
+            driverStation.println(Line.kUser1, 1,"LOW GEAR!");
+        }
+        
+        if (compressorStatus)
+        {
+            driverStation.println(Line.kUser2,2,"Compressor Enabled");
+        }
+        else
+        {
+            driverStation.println(Line.kUser2,2,"Compressor Disabled");
+        }
+        
+//        try
+//        {
+//            driverStation.println(Line.kUser4, 4, "" + driveLeft1.getSpeed() + " " + driveLeft2.getSpeed());
+//        }
+//        catch(CANTimeoutException e)
+//        {}
+        
+        driverStation.println(Line.kUser3,3,"Left encoder rate "+encLeft.getRate()+" Right encoder rate"+encRight.getRate());
+        driverStation.updateLCD();
+    }
     public void autonomousPeriodic () 
     {
 
     }
-
-    /**
-     * This function is called periodically during operator control
-     */
-    public void teleopPeriodic () 
+    
+    public void driveTeleop()
     {
-        double e1rate = enc1.getRate(); //gets rate for first encoder  
-        double e2rate = enc2.getRate(); //gets rate of second encoder
-        
-        driveStation.println(Line.kUser2, 1, "" + e1rate); //outputs rate of encoder 1 in ft/sec
-        driveStation.println(Line.kUser3, 1, "" + e2rate); //outputs rate of encoder 2 in ft/sec
-        
-        
         if (j1.getRawButton(3) == true) 
         {
             s1.set(DoubleSolenoid.Value.kForward);
-            driveStation.println(Line.kUser1,1,"HIGH GEAR!");
+            driveGear = true;
+            
         }
         
         if (j1.getRawButton(4) == true) 
         {
             s1.set(DoubleSolenoid.Value.kReverse);
-            driveStation.println(Line.kUser1, 1,"LOW GEAR!");
+            driveGear = false;
         }
-        
-        driveStation.updateLCD();
-
-        compressorEnable();
+   
+        //armControl();
         
         double x = j1.getX();
         double y = j1.getY();
@@ -159,21 +191,110 @@ public class RobotTemplate extends IterativeRobot
         }
         try 
         {
-            cjag1.setX(left,(byte)1);
-            cjag2.setX(right,(byte)1);
-            //cjag3.setX(left,(byte)1);
-            //cjag4.setX(right,(byte)1);
-            //cjag5.setX(right,(byte)1);
-            //cjag6.setX(right,(byte)1);
+            driveLeft1.setX(left,(byte)1);
+            driveLeft2.setX(left,(byte)1);
+            driveLeft3.setX(left,(byte)1);
+            driveRight1.setX(right,(byte)1);
+            driveRight2.setX(right,(byte)1);
+            driveRight3.setX(right,(byte)1);
             CANJaguar.updateSyncGroup((byte)1);
-            double a = cjag1.getSpeed();
-            double b = cjag2.getSpeed();
-            driveStation.println(Line.kUser3,3,"" + b + "" + a);
+            double a = driveLeft1.getSpeed();
+            double b = driveLeft2.getSpeed();
         }
         catch (CANTimeoutException e)
         {    
         }
     }
+    
+
+    /**
+     * This function is called periodically during operator control
+     */
+    public void teleopPeriodic () 
+    {
+        driveTeleop();
+        compressorEnable();
+        
+        if (numLoops % 10 == 0)
+            updateDS();
+        
+        numLoops++;
+    }
+    
+    /**
+     * This method is for controlling the arm of the robot
+     */
+    /*
+    public void armControl ()
+    {
+        try 
+        {
+            double axisY = j2.getAxis(Joystick.AxisType.kY);
+            double encCount = encLeft.getDistance();
+            int setPoint1 = 50, setPoint2 = 100, setPoint3 = 150, setPoint4 = 200;
+            driverStation.println(Line.kUser4, 4, "" + encCount);
+        
+            if (j2.getRawButton(1) == true)
+            {
+                if (encCount < setPoint1)
+                {
+                    armJag.setX(1);
+                }
+                else if (encCount > setPoint1)
+                {
+                    armJag.setX(-1);
+                }
+            }
+        
+            if (j2.getRawButton(2) == true)
+            {
+                if (encCount < setPoint2)
+                {
+                    armJag.setX(1);
+                }
+                else if (encCount > setPoint2)
+                {
+                    armJag.setX(-1);
+                }
+            }
+        
+            if (j2.getRawButton(3) == true)
+            {
+                if (encCount < setPoint3)
+                {
+                    armJag.setX(1);
+                }
+                else if (encCount > setPoint3)
+                {
+                    armJag.setX(-1);
+                }
+            }
+        
+            if (j2.getRawButton(4) == true)
+            {
+                if (encCount < setPoint4)
+                {
+                    armJag.setX(1);
+                }
+                else if (encCount > setPoint4)
+                {
+                    armJag.setX(-1);
+                }
+            }
+        
+            if (limitSwitch.get() == true && axisY > 0)
+            {
+                axisY = 0;
+                {
+                   armJag.setX(axisY);
+                }
+            }
+        }
+        catch (CANTimeoutException)
+        {
+        }
+    }
+    */
     
     /**
      * This function is called periodically during test mode
