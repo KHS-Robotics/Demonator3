@@ -1,4 +1,4 @@
 Demonator3
 ==========
 
-Contains the code used in KCSD's 2014 robot.
+Contains the code used for Kennett High School (Team 4342) Demon Robotics for Aerial Assist
