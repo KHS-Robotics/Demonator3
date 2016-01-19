@@ -55,7 +55,7 @@ import edu.wpi.first.wpilibj.image.RGBImage;
  * Assist Game Manual </a>
  * @see <a href = "https://www.youtube.com/watch?v=oxp4dkMQ1Vo"> A video explaining how to play Aerial Assist </a>
  */
-public class Demonator extends IterativeRobot 
+public class RobotTemplate extends IterativeRobot 
 {
     /**
      * Each encoder pulse translates to .0014 ft
